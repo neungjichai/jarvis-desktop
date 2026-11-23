@@ -1,0 +1,151 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+  font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+}
+
+#stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- 캐릭터 ---------- */
+.character {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 128px;
+  height: 128px;
+  will-change: transform;
+}
+
+.character canvas {
+  display: block;
+  width: 128px;
+  height: 128px;
+  cursor: pointer;
+}
+
+/* 트레이에서 다시 불러올 때 '뿅' */
+.character.pop canvas {
+  animation: pop 420ms cubic-bezier(.2, 1.6, .4, 1);
+}
+@keyframes pop {
+  0%   { transform: scale(0.2) translateY(40px); opacity: 0; }
+  60%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.off-btn {
+  position: absolute;
+  top: 6px;
+  right: 2px;
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(30, 34, 45, 0.85);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms;
+}
+.character.hover .off-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.off-btn:hover { background: #e5484d; }
+
+/* ---------- 말풍선 ---------- */
+/* 배경만 반투명, 글자·버튼은 불투명. 마우스를 올리면 불투명 (UIR-001) */
+.bubble {
+  position: absolute;
+  bottom: 136px;
+  left: 0;
+  max-width: 300px;
+  min-width: 120px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  color: #1b1d24;
+  font-size: 13px;
+  line-height: 1.45;
+  transition: background 150ms, opacity 150ms;
+}
+.bubble:hover { background: rgba(255, 255, 255, 1); }
+.bubble.hidden { display: none; }
+
+.bubble.error { border-color: rgba(229, 72, 77, 0.5); }
+.bubble.error .bubble-text::before { content: "⚠ "; color: #e5484d; }
+
+.bubble-text { white-space: pre-wrap; word-break: keep-all; overflow-wrap: anywhere; }
+
+.bubble-actions { display: flex; gap: 6px; margin-top: 8px; }
+.bubble-actions:empty { display: none; }
+.bubble-actions button {
+  border: 0;
+  border-radius: 8px;
+  padding: 5px 10px;
+  background: #3b6cf6;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.bubble-actions button:hover { background: #2f58cc; }
+
+.bubble-tail {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: inherit;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  transform: rotate(45deg);
+}
+
+.input-bubble {
+  width: 300px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.92);
+}
+.input-bubble input {
+  width: 100%;
+  border: 1px solid #d5d9e2;
+  border-radius: 9px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  color: #1b1d24;
+  background: #fff;
+  outline: none;
+}
+.input-bubble input:focus { border-color: #3b6cf6; }
+
+/* 하트 (쓰다듬기) */
+.heart {
+  position: absolute;
+  font-size: 16px;
+  color: #ff5d8f;
+  pointer-events: none;
+  animation: heart-up 1100ms ease-out forwards;
+}
+@keyframes heart-up {
+  from { transform: translateY(0) scale(.6); opacity: 1; }
+  to   { transform: translateY(-50px) scale(1.1); opacity: 0; }
+}

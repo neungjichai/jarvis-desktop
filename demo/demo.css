@@ -1,0 +1,88 @@
+/* 브라우저 데모 전용: 가짜 바탕화면과 작업 표시줄 */
+html, body { background: transparent; }
+
+.desktop {
+  position: fixed;
+  inset: 0 0 48px 0;
+  background: linear-gradient(135deg, #3a6ea5 0%, #6aa7d8 55%, #b9d7ee 100%);
+}
+
+.panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  max-width: 560px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1b1d24;
+  font-size: 13px;
+  user-select: text;
+}
+.panel p { margin: 4px 0 10px; color: #555c6b; }
+.panel .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.panel button {
+  border: 1px solid #d5d9e2;
+  border-radius: 8px;
+  padding: 5px 10px;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.panel button:hover { border-color: #3b6cf6; color: #3b6cf6; }
+
+.fake-window {
+  position: absolute;
+  top: 190px;
+  right: 60px;
+  width: 420px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  font-size: 13px;
+}
+.fake-title { padding: 8px 12px; background: #2b579a; color: #fff; }
+.fake-body { padding: 20px 14px 60px; color: #333; }
+
+/* 위젯 영역 = 작업 표시줄 바로 위 */
+#stage {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 48px;
+  height: 260px;
+  width: auto;
+  pointer-events: none;
+}
+#stage .character,
+#stage .bubble { pointer-events: auto; }
+
+.taskbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  background: rgba(32, 32, 40, 0.92);
+  color: #fff;
+  font-size: 13px;
+}
+.taskbar .start { font-size: 20px; }
+.taskbar .spacer { flex: 1; }
+.tray-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+.tray-icon:hover { background: rgba(255, 255, 255, 0.15); }
+.tray-icon img { width: 22px; height: 22px; }

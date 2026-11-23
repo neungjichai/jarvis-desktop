@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>비서 자비스 — 브라우저 데모</title>
+  <link rel="stylesheet" href="../src/renderer/style.css" />
+  <link rel="stylesheet" href="demo.css" />
+</head>
+<body>
+  <!-- 가짜 바탕화면 + 데모 패널 (발표 백업용) -->
+  <div class="desktop">
+    <div class="panel">
+      <strong>비서 자비스 · 시연 패널</strong>
+      <p>Ctrl+Alt+J: 말 걸기 · 캐릭터 클릭: 쓰다듬기 · 더블클릭: 말 걸기</p>
+      <div class="row">
+        <button onclick="demo.chat()">말 걸기</button>
+        <button onclick="demo.schedule()">일정 알림 (회의 링크)</button>
+        <button onclick="demo.scheduleNoLink()">일정 알림 (링크 없음)</button>
+        <button onclick="demo.thinking()">AI 응답 중 → 답변</button>
+        <button onclick="demo.timer()">10초 타이머</button>
+        <button onclick="demo.update()">업데이트 안내</button>
+        <button onclick="demo.offline()">오프라인 안내</button>
+      </div>
+      <div class="row">
+        이동 빈도:
+        <button onclick="demo.freq('often')">자주</button>
+        <button onclick="demo.freq('sometimes')">가끔</button>
+        <button onclick="demo.freq('never')">안 함</button>
+      </div>
+    </div>
+    <div class="fake-window">
+      <div class="fake-title">작업 중인 문서.docx</div>
+      <div class="fake-body">캐릭터는 작업 표시줄 위에서만 움직여서 이 창을 가리지 않아요.</div>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="bubble" class="bubble hidden" role="status" aria-live="polite">
+      <div id="bubble-text" class="bubble-text"></div>
+      <div id="bubble-actions" class="bubble-actions"></div>
+      <div id="bubble-tail" class="bubble-tail"></div>
+    </div>
+    <form id="input-bubble" class="bubble input-bubble hidden" autocomplete="off">
+      <input id="chat-input" type="text" maxlength="500"
+             placeholder="무엇을 도와드릴까요? (예: 3분 타이머 맞춰줘)" />
+      <div class="bubble-tail input-tail"></div>
+    </form>
+    <div id="character" class="character">
+      <canvas id="sprite" width="128" height="128"></canvas>
+      <button id="off-btn" class="off-btn" type="button" title="숨기기">OFF</button>
+    </div>
+  </div>
+
+  <div class="taskbar">
+    <span class="start">⊞</span>
+    <span class="spacer"></span>
+    <button class="tray-icon" title="자비스 불러오기 (트레이)" onclick="demo.show()">
+      <img src="../assets/tray.png" alt="" />
+    </button>
+    <span class="clock" id="clock"></span>
+  </div>
+
+  <script src="stub.js"></script>
+  <script src="../src/renderer/sprite.js"></script>
+  <script src="../src/renderer/renderer.js"></script>
+  <script>
+    const tick = () => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }); };
+    tick(); setInterval(tick, 10000);
+  </script>
+</body>
+</html>

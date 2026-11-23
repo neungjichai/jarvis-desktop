@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' file: data:; connect-src 'none'" />
+  <title>비서 자비스</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="stage">
+    <!-- 말풍선: 답변·알림·오류 모두 같은 형식 (화면설계서 7장) -->
+    <div id="bubble" class="bubble hidden" role="status" aria-live="polite">
+      <div id="bubble-text" class="bubble-text"></div>
+      <div id="bubble-actions" class="bubble-actions"></div>
+      <div id="bubble-tail" class="bubble-tail"></div>
+    </div>
+
+    <!-- 대화 입력 말풍선: 미리 만들어 두고 표시만 한다 (PER-001) -->
+    <form id="input-bubble" class="bubble input-bubble hidden" autocomplete="off">
+      <input id="chat-input" type="text" maxlength="500"
+             placeholder="무엇을 도와드릴까요? (예: 3분 타이머 맞춰줘)" />
+      <div class="bubble-tail input-tail"></div>
+    </form>
+
+    <div id="character" class="character">
+      <canvas id="sprite" width="128" height="128"></canvas>
+      <button id="off-btn" class="off-btn" type="button" title="숨기기 (트레이 아이콘으로 다시 불러와요)">OFF</button>
+    </div>
+  </div>
+
+  <script src="sprite.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

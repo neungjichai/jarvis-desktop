@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# 릴리스 워크플로가 빌드 때 만드는 파일 (사이트 주소)
+src/main/build-info.json

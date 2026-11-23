@@ -1,0 +1,142 @@
+# 릴리스 자동화 (PMR-002 · SER-002 ⑤⑦ · SFR-005 · PSR-001)
+#
+# 1) 태그 push (예: git tag -a v1.0.2 -m "변경 사항…" && git push origin v1.0.2)
+#    → 태그·package.json 버전 확인 → Windows 설치 파일(.exe) 빌드 → SHA-256 계산
+#    → GitHub Release 생성(.exe + .sha256 첨부) → 웹사이트 POST /api/releases/sync 로 자동 등록
+#    릴리스 노트: 주석 태그(-a -m)의 메시지. 메시지가 없으면 GitHub 자동 생성 노트.
+#
+# 2) 수동 실행(Actions → Release → Run workflow, 태그 입력)
+#    → 이미 만든 GitHub Release의 .exe로 웹사이트 등록만 다시 시도 (사이트가 꺼져 있었을 때 등)
+#
+# 필요한 Secrets (Settings → Secrets and variables → Actions)
+#   SITE_URL     웹사이트 운영 주소 (https://…, 끝에 / 없이). 앱 안에도 이 주소가 들어간다.
+#   SYNC_SECRET  웹사이트 서버의 SYNC_SECRET과 같은 값
+# 웹사이트 서버의 GITHUB_REPO는 이 저장소(OWNER/REPO)여야 다운로드 URL 검증을 통과한다.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "웹사이트에 다시 등록할 태그 (예: v1.0.2)"
+        required: true
+
+permissions:
+  contents: write # GitHub Release 생성·첨부
+
+concurrency:
+  group: release-${{ github.ref }}-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    if: github.event_name == 'push'
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 주석 태그 메시지(릴리스 노트)를 읽기 위해
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 태그와 package.json 버전 확인
+        id: ver
+        run: node scripts/release.mjs check-tag "$TAG"
+
+      - name: 앱에 웹사이트 주소 넣기
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: node scripts/release.mjs build-info
+
+      - name: 의존성 설치
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install --no-audit --no-fund; fi
+
+      - name: 설치 파일 빌드 (electron-builder)
+        run: npx electron-builder --win nsis --publish never
+
+      - name: SHA-256 계산
+        id: hash
+        run: node scripts/release.mjs hash "dist/HeyJarvis-Setup-${{ steps.ver.outputs.version }}.exe"
+
+      - name: 릴리스 노트 준비
+        run: |
+          # checkout이 주석 태그를 가벼운 태그로 바꿔 받는 경우가 있어 태그 객체를 다시 받는다
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          if [ "$(git cat-file -t "$TAG")" = "tag" ]; then
+            git tag -l --format='%(contents)' "$TAG" | sed '/-----BEGIN PGP SIGNATURE-----/,$d' > notes.md
+          else
+            : > notes.md # 가벼운 태그(메시지 없음)
+          fi
+          if [ -z "$(tr -d '[:space:]' < notes.md)" ]; then
+            echo "태그 메시지가 없어 GitHub 자동 생성 노트를 써요."
+            : > notes.md
+          fi
+
+      - name: GitHub Release 만들기
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FILE: dist/HeyJarvis-Setup-${{ steps.ver.outputs.version }}.exe
+          SHA256: ${{ steps.hash.outputs.sha256 }}
+        run: |
+          { cat notes.md; printf '\n\n---\n**SHA-256** (`%s`)\n```\n%s\n```\n' "$(basename "$FILE")" "$SHA256"; } > release-body.md
+          if [ -s notes.md ]; then
+            gh release create "$TAG" "$FILE" "$FILE.sha256" --title "$TAG" --notes-file release-body.md --verify-tag
+          else
+            gh release create "$TAG" "$FILE" "$FILE.sha256" --title "$TAG" --generate-notes --verify-tag
+            gh release view "$TAG" --json body --jq .body > notes.md
+            { cat notes.md; printf '\n\n---\n**SHA-256** (`%s`)\n```\n%s\n```\n' "$(basename "$FILE")" "$SHA256"; } > release-body.md
+            gh release edit "$TAG" --notes-file release-body.md
+          fi
+
+      - name: 웹사이트에 자동 등록
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
+        run: node scripts/release.mjs sync "$TAG" "dist/HeyJarvis-Setup-${{ steps.ver.outputs.version }}.exe" notes.md
+
+  resync:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 태그 확인
+        run: |
+          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "::error::태그는 v1.0.2 형식이어야 해요."; exit 1; fi
+
+      - name: 기존 릴리스에서 설치 파일·노트 가져오기
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh release download "$TAG" --pattern "HeyJarvis-Setup-*.exe" --dir dist
+          # 웹사이트에는 SHA-256 꼬리표 앞의 본문만 보낸다
+          gh release view "$TAG" --json body --jq .body | sed '/^---$/,$d' > notes.md
+          gh release view "$TAG" --json publishedAt --jq '.publishedAt' > published.txt
+          ls -l dist
+
+      - name: 웹사이트에 등록
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
+        run: |
+          FILE=$(ls dist/HeyJarvis-Setup-*.exe | head -n1)
+          # 배포일은 원래 릴리스 날짜(한국 시간)로
+          export RELEASED_AT=$(TZ=Asia/Seoul date -d "$(cat published.txt)" +%F)
+          node scripts/release.mjs sync "$TAG" "$FILE" notes.md
